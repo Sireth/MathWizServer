@@ -1,0 +1,12 @@
+
+[submodule "back"]
+	path = back
+	url = git@github.com:Sireth/MathWizBack.git
+	branch = main
+[submodule "front"]
+	path = front
+	url = git@github.com:Sireth/MathWizFront.git
+	branch = main
+[submodule "app"]
+	path = app
+	url = git@github.com:Sireth/MathWizApp.git
