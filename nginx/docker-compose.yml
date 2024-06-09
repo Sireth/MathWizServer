@@ -1,0 +1,76 @@
+version: '3'
+
+services:
+
+  math_wiz_front_prod:
+    image: sireth/math_wiz_front_prod:latest
+    container_name: math_wiz_front_prod
+    build:
+      context: ../front
+      dockerfile: ../front/docker/DockerfileProduction
+
+  math_wiz_app_prod:
+    build:
+      context: ../app
+      dockerfile: ../app/docker/Dockerfile
+    container_name: math_wiz_app_prod
+    volumes:
+      - math_wiz_app_build:/math_wiz_app/build
+    command: sh -c "cd build && rm -rf ./* && cmake -DCMAKE_MAKE_PROGRAM=/usr/bin/ninja -DCMAKE_C_COMPILER=/usr/bin/gcc-9 -DCMAKE_CXX_COMPILER=/usr/bin/g++-9 -G Ninja .. && cmake --build . -j 10"
+
+
+  math_wiz_back_prod:
+    build:
+      context: ../back
+      dockerfile: ../back/docker/Dockerfile
+    container_name: math_wiz_back_prod
+    command: 'gunicorn math_wiz.wsgi:application --workers=2 --bind 0.0.0.0:8000 --chdir /math_wiz_back/math_wiz/'
+    expose:
+      - 8000
+    ports:
+      - "8000:8000"
+    depends_on:
+      - math_wiz_db_prod
+      - math_wiz_app_prod
+    networks:
+      - math_wiz_network_prod
+    volumes:
+      - static_volume:/math_wiz_back/math_wiz/staticfiles
+      - media_volume:/math_wiz_back/math_wiz/media
+      - math_wiz_app_build:/math_wiz_app/
+
+  math_wiz_db_prod:
+    image: postgres
+    environment:
+      - POSTGRES_DB=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    container_name: math_wiz_db_prod
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+
+  math_wiz_nginx:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    container_name: math_wiz_nginx
+    ports:
+      - "80:80"
+    depends_on:
+      - math_wiz_back_prod
+      - math_wiz_front_prod
+    networks:
+      - math_wiz_network_prod
+    volumes:
+      - static_volume:/math_wiz_back_prod/staticfiles
+      - media_volume:/math_wiz_back_prod/media
+
+volumes:
+  postgres_data: null
+  static_volume:
+  media_volume:
+  math_wiz_app_build:
+
+networks:
+  math_wiz_network_prod:
+    driver: bridge
