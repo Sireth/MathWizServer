@@ -58,6 +58,7 @@ services:
     container_name: math_wiz_nginx
     ports:
       - "80:80"
+      - "443:443"
     depends_on:
       - math_wiz_back_prod
       - math_wiz_front_prod
@@ -66,6 +67,14 @@ services:
     volumes:
       - static_volume:/math_wiz_back_prod/staticfiles
       - media_volume:/math_wiz_back_prod/media
+      - ./certbot/www/:/var/www/certbot/:ro
+      - ./certbot/conf/:/etc/letsencrypt/:ro
+
+  certbot:
+    image: certbot/certbot:latest
+    volumes:
+      - ./certbot/www/:/var/www/certbot/:rw
+      - ./certbot/conf/:/etc/letsencrypt/:rw
 
 volumes:
   postgres_data: null
